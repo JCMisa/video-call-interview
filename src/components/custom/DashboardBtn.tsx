@@ -6,8 +6,8 @@ import { Button } from "../ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
 
 function DashboardBtn() {
-  const { isCandidate, isLoading } = useUserRole();
-  if (isCandidate || isLoading) return null; // return null if user is a candidate/student
+  const { isCandidate, isGuest, isLoading } = useUserRole();
+  if (isCandidate || isGuest || isLoading) return null; // return null if user is a candidate/student
 
   return (
     <Link href={"/dashboard"}>

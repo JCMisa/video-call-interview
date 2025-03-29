@@ -14,6 +14,7 @@ export const useUserRole = () => {
   return {
     isLoading,
     isInterviewer: userData?.role === "teacher" || userData?.role === "admin",
-    isCandidate: userData?.role === "student" || userData?.role === "guest",
+    isCandidate: userData?.role === "student",
+    isGuest: userData?.role === "guest",
   };
 };
