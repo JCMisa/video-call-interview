@@ -161,6 +161,7 @@ const MeetingRoom = () => {
   const submitAnswerToAi = async () => {
     const studentAnswers = transcripts.join(" ");
     console.log("student answers: ", studentAnswers);
+    // todo: pass the studentAnswers to gemini model and let it generate an evaluation
   };
 
   return (
