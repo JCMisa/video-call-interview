@@ -1,4 +1,4 @@
-import { Doc } from "../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import useMeetingActions from "@/hooks/useMeetingActions";
 import { getMeetingStatus } from "@/lib/utils";
 import { format } from "date-fns";
@@ -9,13 +9,34 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, LoaderCircleIcon, TrashIcon } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import toast from "react-hot-toast";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Interview = Doc<"interviews">;
 
-function MeetingCard({ interview }: { interview: Interview }) {
+function MeetingCard({
+  interview,
+  isInterviewer = false,
+}: {
+  interview: Interview;
+  isInterviewer?: boolean;
+}) {
   const { joinMeeting } = useMeetingActions();
 
   const status = getMeetingStatus(interview);
@@ -24,10 +45,26 @@ function MeetingCard({ interview }: { interview: Interview }) {
     "EEEE, MMMM d · h:mm a"
   );
 
+  const [deleting, isDeleting] = useState<boolean>(false);
+
+  const deleteInterview = useMutation(api.interviews.deleteInterview);
+
+  const handleDeleteInterview = async (interviewId: Id<"interviews">) => {
+    isDeleting(true);
+    try {
+      await deleteInterview({ interviewId });
+    } catch (error) {
+      console.log("Error deleting interview:", error);
+      toast.error("Something went wrong");
+    } finally {
+      isDeleting(false);
+    }
+  };
+
   return (
     <Card>
-      <CardHeader className="space-y-2">
-        <div className="flex items-center justify-between">
+      <CardHeader className="space-y-2 relative">
+        <div className="flex items-center justify-between gap-3 mt-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarIcon className="h-4 w-4" />
             {formattedDate}
@@ -39,15 +76,54 @@ function MeetingCard({ interview }: { interview: Interview }) {
                 ? "default"
                 : status === "upcoming"
                   ? "secondary"
-                  : "outline"
+                  : status === "failed"
+                    ? "destructive"
+                    : status === "succeeded"
+                      ? "default"
+                      : "outline"
             }
           >
             {status === "live"
               ? "Live Now"
               : status === "upcoming"
                 ? "Upcoming"
-                : "Completed"}
+                : status === "failed"
+                  ? "Failed"
+                  : status === "succeeded"
+                    ? "Passed"
+                    : "Completed"}
           </Badge>
+
+          {isInterviewer && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild className="absolute top-0 right-0">
+                <Button variant={"ghost"} size={"sm"}>
+                  {deleting ? (
+                    <LoaderCircleIcon className="size-4 animate-spin" />
+                  ) : (
+                    <TrashIcon className="size-4 text-red-600" />
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    this interview and remove related data from our servers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteInterview(interview._id)}
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         <CardTitle>{interview.title}</CardTitle>

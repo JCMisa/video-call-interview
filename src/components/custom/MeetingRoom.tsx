@@ -7,6 +7,7 @@ import {
   useCallStateHooks,
 } from "@stream-io/video-react-sdk";
 import {
+  CheckIcon,
   DotIcon,
   LayoutListIcon,
   LoaderIcon,
@@ -31,6 +32,8 @@ import {
 } from "../ui/dropdown-menu";
 import EndCallButton from "./EndCallButton";
 import InterviewQuestions from "./InterviewQuestions";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
@@ -78,6 +81,12 @@ const MeetingRoom = () => {
     null
   );
   const [transcripts, setTranscripts] = useState<string[]>([]);
+
+  const [studentAnswer, setStudentAnswer] = useState("");
+
+  const [showDialog, setShowDialog] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const { useCallCallingState } = useCallStateHooks();
 
@@ -158,10 +167,23 @@ const MeetingRoom = () => {
     }
   };
 
-  const submitAnswerToAi = async () => {
-    const studentAnswers = transcripts.join(" ");
-    console.log("student answers: ", studentAnswers);
-    // todo: pass the studentAnswers to gemini model and let it generate an evaluation
+  const saveAnswer = async () => {
+    const studAnswer = transcripts.join(" ");
+    console.log("student answers: ", studAnswer);
+
+    setIsLoading(true);
+    try {
+      // update the interview schema and add the studentAnswers by passing it to EndCall component
+      setStudentAnswer(studAnswer);
+      // todo: pass the studentAnswers to gemini model and let it generate an evaluation
+      // todo: update the interview schema and add the ai feedback by passing it to EndCall component
+
+      setShowDialog(true);
+    } catch (error) {
+      console.log(`${error}: failed to save answer and feedback`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -219,7 +241,9 @@ const MeetingRoom = () => {
                     <UsersIcon className="size-4" />
                   </Button>
 
-                  <EndCallButton />
+                  {studentAnswer && (
+                    <EndCallButton studentAnswer={studentAnswer} />
+                  )}
                 </div>
               </div>
             </div>
@@ -286,10 +310,27 @@ const MeetingRoom = () => {
               {transcripts.length > 0 && (
                 <Button
                   className="flex items-center justify-center gap-2 p-5 px-10 min-w-32"
-                  onClick={submitAnswerToAi}
+                  onClick={saveAnswer}
+                  disabled={isLoading}
                 >
-                  <SparklesIcon className="size-4" />
-                  <p className="text-sm">Submit Answers</p>
+                  {!studentAnswer ? (
+                    isLoading ? (
+                      <>
+                        <LoaderIcon className="size-4 animate-spin" />
+                        <p className="text-sm">Saving...</p>
+                      </>
+                    ) : (
+                      <>
+                        <SparklesIcon className="size-4" />
+                        <p className="text-sm">Save Answer</p>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <CheckIcon className="size-4" />
+                      <p className="text-sm">Answer Saved</p>
+                    </>
+                  )}
                 </Button>
               )}
             </div>

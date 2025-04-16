@@ -72,3 +72,37 @@ export const updateInterviewStatus = mutation({
     });
   },
 });
+
+export const updateInterviewStudentAnswer = mutation({
+  args: {
+    id: v.id("interviews"),
+    studentAnswer: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.patch(args.id, {
+      studentAnswer: args.studentAnswer,
+    });
+  },
+});
+
+export const deleteInterview = mutation({
+  args: { interviewId: v.id("interviews") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const interview = await ctx.db.get(args.interviewId);
+    if (!interview) throw new Error("Interview not found");
+
+    await ctx.db.delete(args.interviewId);
+
+    const commentsToDelete = await ctx.db
+      .query("comments") // Replace "comments" with your actual comments table name
+      .filter((q) => q.eq(q.field("interviewId"), args.interviewId))
+      .collect();
+
+    await Promise.all(
+      commentsToDelete.map((comment) => ctx.db.delete(comment._id))
+    );
+  },
+});

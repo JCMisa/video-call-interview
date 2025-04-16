@@ -24,8 +24,9 @@ import {
 import UserInfo from "@/components/custom/UserInfo";
 import { Loader2Icon, XIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { TIME_SLOTS } from "@/constants";
+// import { TIME_SLOTS } from "@/constants";
 import MeetingCard from "@/components/custom/MeetingCard";
+import { useUserRole } from "@/hooks/useUserRole";
 
 function InterviewScheduleUI() {
   const client = useStreamVideoClient();
@@ -41,6 +42,8 @@ function InterviewScheduleUI() {
   const interviewers = users?.filter(
     (u) => u.role === "teacher" || u.role === "admin"
   );
+
+  const { isInterviewer, isLoading } = useUserRole();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -267,21 +270,23 @@ function InterviewScheduleUI() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
-                  <Select
+                  <Input
+                    type="time"
+                    min="07:00"
+                    max="18:00"
                     value={formData.time}
-                    onValueChange={(time) => setFormData({ ...formData, time })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_SLOTS.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => {
+                      const time = e.target.value;
+                      if (time >= "07:00" && time <= "18:00") {
+                        setFormData({ ...formData, time });
+                      } else {
+                        toast.error(
+                          "Please select a time between 7:00 AM and 6:00 PM"
+                        );
+                      }
+                    }}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -315,7 +320,11 @@ function InterviewScheduleUI() {
         <div className="spacey-4">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {interviews.map((interview) => (
-              <MeetingCard key={interview._id} interview={interview} />
+              <MeetingCard
+                key={interview._id}
+                interview={interview}
+                isInterviewer={isInterviewer}
+              />
             ))}
           </div>
         </div>

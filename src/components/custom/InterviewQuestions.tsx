@@ -23,7 +23,15 @@ const InterviewQuestions = () => {
           <span className="text-primary font-bold text-[13px]">analysis</span>{" "}
           and{" "}
           <span className="text-primary font-bold text-[13px]">evaluation</span>{" "}
-          for school admission purposes.
+          for school admission purposes. Don&apos;t forget to click on{" "}
+          <span className="text-primary font-bold text-[13px]">
+            "Submit Answer"
+          </span>{" "}
+          button first before{" "}
+          <span className="text-primary font-bold text-[13px]">"Ending"</span>{" "}
+          the call to save your answer, neglecting to click it before ending the
+          call will result to negative feedback and lead to interview{" "}
+          <span className="text-red-600 font-bold text-[13px]">failure</span>.
         </p>
       </div>
       <div className="w-full flex flex-col space-y-6 overflow-auto card-scroll">

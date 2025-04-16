@@ -18,6 +18,14 @@ export default defineSchema({
   interviews: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
+    studentAnswer: v.optional(v.string()),
+    aiFeedback: v.optional(
+      v.object({
+        feedback: v.string(),
+        rating: v.number(),
+        suggestions: v.optional(v.string()),
+      })
+    ),
     startTime: v.number(),
     endTime: v.optional(v.number()),
     status: v.string(),

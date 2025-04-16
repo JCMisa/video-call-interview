@@ -7,25 +7,14 @@ export const INTERVIEW_CATEGORY = [
   { id: "failed", title: "Failed", variant: "destructive" },
 ] as const;
 
-export const TIME_SLOTS = [
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-];
+export const TIME_SLOTS = Array.from({ length: 601 }, (_, i) => {
+  const hour = Math.floor((i + 420) / 60);
+  const minute = (i + 420) % 60;
+  return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+}).filter((time) => {
+  const [hour] = time.split(":").map(Number);
+  return hour >= 7 && hour <= 18;
+});
 
 export const QUICK_ACTIONS = [
   {

@@ -1,18 +1,22 @@
-import { useCall, useCallStateHooks } from "@stream-io/video-react-sdk";
+import { useCall } from "@stream-io/video-react-sdk";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import toast from "react-hot-toast";
 import { api } from "../../../convex/_generated/api";
 
-const EndCallButton = () => {
+const EndCallButton = ({ studentAnswer }: { studentAnswer: string }) => {
   const call = useCall();
   const router = useRouter();
-  const { useLocalParticipant } = useCallStateHooks();
-  const localParticipant = useLocalParticipant();
+  // const { useLocalParticipant } = useCallStateHooks();
+  // const localParticipant = useLocalParticipant();
 
   const updateInterviewStatus = useMutation(
     api.interviews.updateInterviewStatus
+  );
+
+  const updateInterviewAnswer = useMutation(
+    api.interviews.updateInterviewStudentAnswer
   );
 
   const interview = useQuery(api.interviews.getInterviewByStreamCallId, {
@@ -21,9 +25,9 @@ const EndCallButton = () => {
 
   if (!call || !interview) return null;
 
-  const isMeetingOwner = localParticipant?.userId === call.state.createdBy?.id;
+  // const isMeetingOwner = localParticipant?.userId === call.state.createdBy?.id;
 
-  if (!isMeetingOwner) return null;
+  // if (!isMeetingOwner) return null;
 
   const endCall = async () => {
     try {
@@ -32,6 +36,11 @@ const EndCallButton = () => {
       await updateInterviewStatus({
         id: interview._id,
         status: "completed",
+      });
+
+      await updateInterviewAnswer({
+        id: interview._id,
+        studentAnswer: studentAnswer,
       });
 
       router.push("/");
