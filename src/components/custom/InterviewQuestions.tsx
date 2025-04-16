@@ -40,7 +40,7 @@ const InterviewQuestions = () => {
           {/* q1 */}
           <div className="flex flex-col gap-2 w-full">
             <p className="text-lg font-semibold">
-              What subject do you enjoy the most?
+              What subject do you enjoy the most? Please explain.
             </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 Math</span>
@@ -52,7 +52,7 @@ const InterviewQuestions = () => {
           {/* q2 */}
           <div className="flex flex-col gap-2 w-full">
             <p className="text-lg font-semibold">
-              Which learning method do you find most effective?
+              Which learning method do you find most effective? Please explain.
             </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 Lectures</span>
@@ -63,7 +63,9 @@ const InterviewQuestions = () => {
           </div>
           {/* q3 */}
           <div className="flex flex-col gap-2 w-full">
-            <p className="text-lg font-semibold">How do you prefer to study?</p>
+            <p className="text-lg font-semibold">
+              How do you prefer to study? Please explain.
+            </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 Alone</span>
               <span>🟢 With a group</span>
@@ -81,6 +83,7 @@ const InterviewQuestions = () => {
           <div className="flex flex-col gap-2 w-full">
             <p className="text-lg font-semibold">
               Which type of extracurricular activity interest you the most?
+              Please explain.
             </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 Sports</span>
@@ -93,6 +96,7 @@ const InterviewQuestions = () => {
           <div className="flex flex-col gap-2 w-full">
             <p className="text-lg font-semibold">
               What motivates you to participate in extracurricular activities?
+              Please explain.
             </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 Personal enjoyment</span>
@@ -111,7 +115,7 @@ const InterviewQuestions = () => {
           <div className="flex flex-col gap-2 w-full">
             <p className="text-lg font-semibold">
               What are your family&apos;s expectations for your academic
-              performance?
+              performance? Please explain.
             </p>
             <div className="grid grid-cols-2 gap-3 justify-between w-full">
               <span>🟢 High expectations, but supportive</span>

@@ -5,7 +5,13 @@ import { Button } from "../ui/button";
 import toast from "react-hot-toast";
 import { api } from "../../../convex/_generated/api";
 
-const EndCallButton = ({ studentAnswer }: { studentAnswer: string }) => {
+const EndCallButton = ({
+  studentAnswer,
+  aiFeedback,
+}: {
+  studentAnswer: string;
+  aiFeedback: { feedback: string; rating: number; suggestions: string };
+}) => {
   const call = useCall();
   const router = useRouter();
   // const { useLocalParticipant } = useCallStateHooks();
@@ -15,8 +21,8 @@ const EndCallButton = ({ studentAnswer }: { studentAnswer: string }) => {
     api.interviews.updateInterviewStatus
   );
 
-  const updateInterviewAnswer = useMutation(
-    api.interviews.updateInterviewStudentAnswer
+  const updateInterviewAiResponse = useMutation(
+    api.interviews.updateInterviewAiFeedback
   );
 
   const interview = useQuery(api.interviews.getInterviewByStreamCallId, {
@@ -38,9 +44,10 @@ const EndCallButton = ({ studentAnswer }: { studentAnswer: string }) => {
         status: "completed",
       });
 
-      await updateInterviewAnswer({
+      await updateInterviewAiResponse({
         id: interview._id,
         studentAnswer: studentAnswer,
+        aiFeedback: aiFeedback,
       });
 
       router.push("/");

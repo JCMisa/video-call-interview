@@ -34,6 +34,8 @@ import EndCallButton from "./EndCallButton";
 import InterviewQuestions from "./InterviewQuestions";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { chatSession } from "@/utils/GeminiModel";
+import toast from "react-hot-toast";
 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
@@ -83,8 +85,11 @@ const MeetingRoom = () => {
   const [transcripts, setTranscripts] = useState<string[]>([]);
 
   const [studentAnswer, setStudentAnswer] = useState("");
-
-  const [showDialog, setShowDialog] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState({
+    feedback: "",
+    rating: 0,
+    suggestions: "",
+  });
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -175,12 +180,41 @@ const MeetingRoom = () => {
     try {
       // update the interview schema and add the studentAnswers by passing it to EndCall component
       setStudentAnswer(studAnswer);
-      // todo: pass the studentAnswers to gemini model and let it generate an evaluation
-      // todo: update the interview schema and add the ai feedback by passing it to EndCall component
 
-      setShowDialog(true);
+      // todo: pass the studentAnswers to gemini model and let it generate an evaluation
+      const PROMPT = `
+        interview questions:
+
+What subject do you enjoy the most?
+
+Which learning method do you find most effective?
+
+How do you prefer to study?
+
+Which type of extracurricular activity interest you the most?
+
+What motivates you to participate in extracurricular activities?
+
+What are your family expectations for your academic
+performance?
+
+student answer: ${studAnswer}`;
+
+      const result = await chatSession.sendMessage(PROMPT);
+
+      if (result) {
+        const aiResult = result.response.text();
+        const cleanedResult = JSON.parse(aiResult);
+        setAiFeedback(cleanedResult);
+        console.log("ai feedback response: ", cleanedResult);
+      } else {
+        toast.error("Failed to generate AI feedback");
+      }
+
+      // todo: update the interview schema and add the ai feedback by passing it to EndCall component
     } catch (error) {
       console.log(`${error}: failed to save answer and feedback`);
+      toast.error("failed to save answer and feedback");
     } finally {
       setIsLoading(false);
     }
@@ -241,8 +275,11 @@ const MeetingRoom = () => {
                     <UsersIcon className="size-4" />
                   </Button>
 
-                  {studentAnswer && (
-                    <EndCallButton studentAnswer={studentAnswer} />
+                  {studentAnswer && aiFeedback && (
+                    <EndCallButton
+                      studentAnswer={studentAnswer}
+                      aiFeedback={aiFeedback}
+                    />
                   )}
                 </div>
               </div>
@@ -313,7 +350,9 @@ const MeetingRoom = () => {
                   onClick={saveAnswer}
                   disabled={isLoading}
                 >
-                  {!studentAnswer ? (
+                  {!studentAnswer &&
+                  !aiFeedback.feedback &&
+                  !aiFeedback.rating ? (
                     isLoading ? (
                       <>
                         <LoaderIcon className="size-4 animate-spin" />

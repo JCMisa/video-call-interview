@@ -73,14 +73,20 @@ export const updateInterviewStatus = mutation({
   },
 });
 
-export const updateInterviewStudentAnswer = mutation({
+export const updateInterviewAiFeedback = mutation({
   args: {
     id: v.id("interviews"),
     studentAnswer: v.string(),
+    aiFeedback: v.object({
+      feedback: v.string(),
+      rating: v.number(),
+      suggestions: v.optional(v.string()),
+    }),
   },
   handler: async (ctx, args) => {
     return await ctx.db.patch(args.id, {
       studentAnswer: args.studentAnswer,
+      aiFeedback: args.aiFeedback,
     });
   },
 });

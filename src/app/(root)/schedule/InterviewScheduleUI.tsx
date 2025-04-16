@@ -270,6 +270,7 @@ function InterviewScheduleUI() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
+                  {/* // change the time slot based on the school time */}
                   <Input
                     type="time"
                     min="07:00"
@@ -277,11 +278,11 @@ function InterviewScheduleUI() {
                     value={formData.time}
                     onChange={(e) => {
                       const time = e.target.value;
-                      if (time >= "07:00" && time <= "18:00") {
+                      if (time >= "07:00" && time <= "20:00") {
                         setFormData({ ...formData, time });
                       } else {
                         toast.error(
-                          "Please select a time between 7:00 AM and 6:00 PM"
+                          "Please select a time between 7:00 AM and 8:00 PM"
                         );
                       }
                     }}
