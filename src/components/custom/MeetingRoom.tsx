@@ -94,9 +94,7 @@ const MeetingRoom = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { useCallCallingState } = useCallStateHooks();
-
   const callingState = useCallCallingState();
-
   if (callingState !== CallingState.JOINED) {
     return (
       <div className="h-96 flex items-center justify-center">

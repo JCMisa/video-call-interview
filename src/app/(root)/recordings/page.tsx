@@ -33,6 +33,8 @@ const RecordingsPage = () => {
 
   if (isLoading) return <LoaderUI />;
 
+  console.log("recordings: ", recordings);
+
   return (
     <div className="container max-w-7xl mx-auto p-6">
       {/* HEADER SECTION */}

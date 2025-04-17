@@ -1,7 +1,10 @@
 import { useUser } from "@clerk/nextjs";
-import { useStreamVideoClient } from "@stream-io/video-react-sdk";
+import {
+  CallRecording,
+  useStreamVideoClient,
+} from "@stream-io/video-react-sdk";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import toast from "react-hot-toast";
 import {
@@ -22,11 +25,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import UserInfo from "@/components/custom/UserInfo";
-import { Loader2Icon, XIcon } from "lucide-react";
+import { ClipboardIcon, Loader2Icon, XIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 // import { TIME_SLOTS } from "@/constants";
 import MeetingCard from "@/components/custom/MeetingCard";
 import { useUserRole } from "@/hooks/useUserRole";
+import useGetCalls from "@/hooks/useGetCalls";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import RecordingCard from "@/components/custom/RecordingCard";
+import { format } from "date-fns";
+
+interface RecordingWithCallInfo {
+  url: string;
+  start_time: string;
+  end_time: string;
+  filename: string;
+}
 
 function InterviewScheduleUI() {
   const client = useStreamVideoClient();
@@ -136,6 +150,59 @@ function InterviewScheduleUI() {
   const availableInterviewers = interviewers.filter(
     (i) => !formData.interviewerIds.includes(i.clerkId)
   );
+
+  // get interview recordings -- start
+  const { calls } = useGetCalls({ isAdminView: true });
+  const [recordings, setRecordings] = useState<RecordingWithCallInfo[]>([]);
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      console.log("Fetching recordings started");
+      console.log("Calls available:", calls); // Debug log for calls
+
+      if (!calls) {
+        console.log("No calls available");
+        return;
+      }
+
+      try {
+        console.log("Number of calls to process:", calls.length);
+
+        const recordingsData = await Promise.all(
+          calls.map(async (call) => {
+            console.log("Processing call:", call.cid); // Log each call being processed
+            const response = await call.queryRecordings();
+            console.log("Recordings for call:", call.cid, response.recordings);
+
+            return response.recordings.map((recording) => ({
+              url: recording.url,
+              start_time: recording.start_time,
+              end_time: recording.end_time,
+              filename: recording.filename,
+            }));
+          })
+        );
+
+        const allRecordings = recordingsData
+          .flat()
+          .filter((recording) => recording.url);
+
+        console.log("Filtered recordings:", allRecordings);
+        setRecordings(allRecordings);
+      } catch (error) {
+        console.error("Error in fetchRecordings:", error);
+      }
+    };
+
+    // Add a check to see if calls have changed
+    console.log("useEffect triggered, calls:", calls);
+    fetchRecordings();
+  }, [calls]);
+
+  // Add a debug log when recordings state changes
+  useEffect(() => {
+    console.log("Recordings state updated:", recordings);
+  }, [recordings]);
+  // get interview recordings -- end
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-8">
@@ -321,11 +388,50 @@ function InterviewScheduleUI() {
         <div className="spacey-4">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {interviews.map((interview) => (
-              <MeetingCard
-                key={interview._id}
-                interview={interview}
-                isInterviewer={isInterviewer}
-              />
+              <div key={interview._id} className="flex flex-col gap-2">
+                <MeetingCard
+                  interview={interview}
+                  isInterviewer={isInterviewer}
+                />
+
+                {recordings
+                  .filter(
+                    (rec) => rec.filename.includes(interview.streamCallId) // check lahat ng recordings file name na may included ng current streamCallId
+                  )
+                  .map((recording, index) => (
+                    <div
+                      key={recording.filename || index || 1}
+                      className="flex items-center gap-2 mb-2"
+                    >
+                      <a
+                        href={recording.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-500 hover:underline flex-1"
+                      >
+                        Recording {index + 1} -{" "}
+                        {format(new Date(recording.start_time), "hh:mm a")}
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(recording.url);
+                          toast.success("Recording URL copied!");
+                        }}
+                      >
+                        <ClipboardIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                {!recordings.some((rec) =>
+                  rec.filename.includes(interview.streamCallId)
+                ) && (
+                  <p className="text-sm text-muted-foreground">
+                    No recordings available
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -334,6 +440,23 @@ function InterviewScheduleUI() {
           No interviews scheduled
         </div>
       )}
+
+      {/* RECORDINGS
+      <ScrollArea className="h-[calc(100vh-12rem)] mt-3">
+        {recordings.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
+            {recordings.map((r) => (
+              <RecordingCard key={r.end_time} recording={r} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[400px] gap-4">
+            <p className="text-xl font-medium text-muted-foreground">
+              No recordings available
+            </p>
+          </div>
+        )}
+      </ScrollArea> */}
     </div>
   );
 }

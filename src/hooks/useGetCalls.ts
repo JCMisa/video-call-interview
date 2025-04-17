@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
 
-const useGetCalls = () => {
+interface UseGetCallsProps {
+  isAdminView?: boolean;
+}
+
+const useGetCalls = ({ isAdminView = false }: UseGetCallsProps = {}) => {
   const { user } = useUser();
   const client = useStreamVideoClient();
   const [calls, setCalls] = useState<Call[]>();
@@ -10,32 +14,37 @@ const useGetCalls = () => {
 
   useEffect(() => {
     const loadCalls = async () => {
-      if (!client || !user?.id) return;
+      if (!client || (!isAdminView && !user?.id)) return;
 
       setIsLoading(true);
 
       try {
         const { calls } = await client.queryCalls({
           sort: [{ field: "starts_at", direction: -1 }],
-          filter_conditions: {
-            starts_at: { $exists: true },
-            $or: [
-              { created_by_user_id: user.id },
-              { members: { $in: [user.id] } },
-            ],
-          },
+          filter_conditions: isAdminView
+            ? {
+                starts_at: { $exists: true },
+              }
+            : {
+                starts_at: { $exists: true },
+                $or: [
+                  { created_by_user_id: user?.id },
+                  { members: { $in: [user?.id] } },
+                ],
+              },
         });
 
+        console.log("Fetched calls:", calls); // Debug log
         setCalls(calls);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching calls:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadCalls();
-  }, [client, user?.id]);
+  }, [client, user?.id, isAdminView]);
 
   const now = new Date();
 
