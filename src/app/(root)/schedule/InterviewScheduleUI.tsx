@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import UserInfo from "@/components/custom/UserInfo";
-import { ClipboardIcon, Loader2Icon, XIcon } from "lucide-react";
+import { ClipboardIcon, Loader2Icon, VideoIcon, XIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 // import { TIME_SLOTS } from "@/constants";
 import MeetingCard from "@/components/custom/MeetingCard";
@@ -341,15 +341,15 @@ function InterviewScheduleUI() {
                   <Input
                     type="time"
                     min="07:00"
-                    max="18:00"
+                    max="22:00"
                     value={formData.time}
                     onChange={(e) => {
                       const time = e.target.value;
-                      if (time >= "07:00" && time <= "20:00") {
+                      if (time >= "07:00" && time <= "22:00") {
                         setFormData({ ...formData, time });
                       } else {
                         toast.error(
-                          "Please select a time between 7:00 AM and 8:00 PM"
+                          "Please select a time between 7:00 AM and 10:00 PM"
                         );
                       }
                     }}
@@ -386,49 +386,81 @@ function InterviewScheduleUI() {
         </div>
       ) : interviews.length > 0 ? (
         <div className="spacey-4">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6">
             {interviews.map((interview) => (
-              <div key={interview._id} className="flex flex-col gap-2">
-                <MeetingCard
-                  interview={interview}
-                  isInterviewer={isInterviewer}
-                />
+              <div
+                key={interview._id}
+                className="grid grid-cols-5 gap-2 items-start"
+              >
+                <div className="col-span-3">
+                  <MeetingCard
+                    interview={interview}
+                    isInterviewer={isInterviewer}
+                  />
+                </div>
 
-                {recordings
-                  .filter(
-                    (rec) => rec.filename.includes(interview.streamCallId) // check lahat ng recordings file name na may included ng current streamCallId
-                  )
-                  .map((recording, index) => (
-                    <div
-                      key={recording.filename || index || 1}
-                      className="flex items-center gap-2 mb-2"
-                    >
-                      <a
-                        href={recording.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-500 hover:underline flex-1"
+                <div className="col-span-2 flex flex-col gap-1">
+                  {recordings
+                    .filter((rec) =>
+                      rec.filename.includes(interview.streamCallId)
+                    )
+                    .sort(
+                      (a, b) =>
+                        new Date(a.start_time).getTime() -
+                        new Date(b.start_time).getTime()
+                    ) // Sort ascending
+                    .map((recording, index) => (
+                      <div
+                        key={recording.filename || index}
+                        className="p-3 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
-                        Recording {index + 1} -{" "}
-                        {format(new Date(recording.start_time), "hh:mm a")}
-                      </a>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(recording.url);
-                          toast.success("Recording URL copied!");
-                        }}
-                      >
-                        <ClipboardIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-md">
+                            <VideoIcon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium truncate">
+                                Recording {index + 1}
+                              </p>
+                              <time className="text-xs text-muted-foreground">
+                                {format(
+                                  new Date(recording.start_time),
+                                  "MMM d, hh:mm a"
+                                )}
+                              </time>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <a
+                                href={recording.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline truncate"
+                              >
+                                Watch Recording
+                              </a>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(recording.url);
+                                  toast.success("Recording URL copied!");
+                                }}
+                              >
+                                <ClipboardIcon className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
                 {!recordings.some((rec) =>
                   rec.filename.includes(interview.streamCallId)
                 ) && (
-                  <p className="text-sm text-muted-foreground">
-                    No recordings available
+                  <p className="text-sm text-muted-foreground italic px-1">
+                    No recordings available yet
                   </p>
                 )}
               </div>

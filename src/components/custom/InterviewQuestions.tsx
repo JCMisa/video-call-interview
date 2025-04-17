@@ -23,7 +23,10 @@ const InterviewQuestions = () => {
           <span className="text-primary font-bold text-[13px]">analysis</span>{" "}
           and{" "}
           <span className="text-primary font-bold text-[13px]">evaluation</span>{" "}
-          for school admission purposes. Don&apos;t forget to click on{" "}
+          for school admission purposes. Don&apos;t forget to{" "}
+          <span className="text-primary font-bold text-[13px]">record</span>{" "}
+          your interview session for additional points in assessment, and click
+          on{" "}
           <span className="text-primary font-bold text-[13px]">
             "Submit Answer"
           </span>{" "}
