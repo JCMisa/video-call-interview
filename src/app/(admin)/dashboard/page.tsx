@@ -26,6 +26,16 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import CommentDialog from "@/components/custom/CommentDialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import InterviewDetails from "@/components/custom/InterviewDetails";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Interview = Doc<"interviews">;
 
@@ -84,21 +94,49 @@ function DashboardPage() {
                         <Card className="hover:shadow-md transition-all">
                           {/* CANDIDATE INFO */}
                           <CardHeader className="p-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={candidateInfo.image} />
-                                <AvatarFallback>
-                                  {candidateInfo.initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <CardTitle className="text-base">
-                                  {candidateInfo.name}
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground">
-                                  {interview.title}
-                                </p>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={candidateInfo.image} />
+                                  <AvatarFallback>
+                                    {candidateInfo.initials}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <CardTitle className="text-base">
+                                    {candidateInfo.name}
+                                  </CardTitle>
+                                  <p className="text-sm text-muted-foreground">
+                                    {interview.title}
+                                  </p>
+                                </div>
                               </div>
+
+                              <Sheet>
+                                <SheetTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    View Details
+                                  </Button>
+                                </SheetTrigger>
+                                <SheetContent
+                                  side="bottom"
+                                  className="h-[80vh] overflow-hidden flex flex-col"
+                                >
+                                  <SheetHeader className="flex-none">
+                                    <SheetTitle>Interview Details</SheetTitle>
+                                    <SheetDescription>
+                                      Review the student answers and AI feedback
+                                      below. Please provide your assessment.
+                                    </SheetDescription>
+                                  </SheetHeader>
+
+                                  <ScrollArea className="flex-1 mt-6">
+                                    <div className="px-2">
+                                      <InterviewDetails interview={interview} />
+                                    </div>
+                                  </ScrollArea>
+                                </SheetContent>
+                              </Sheet>
                             </div>
                           </CardHeader>
 
