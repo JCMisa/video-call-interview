@@ -42,4 +42,18 @@ export default defineSchema({
     interviewerId: v.string(),
     interviewId: v.id("interviews"),
   }).index("by_interview_id", ["interviewId"]),
+
+  roleChange: defineTable({
+    requestedBy: v.string(),
+    requestorName: v.optional(v.string()),
+    currentRole: v.string(),
+    requestedRole: v.string(),
+    requestReason: v.optional(v.string()),
+    requestProof: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+  }).index("by_requested_by", ["requestedBy"]),
 });

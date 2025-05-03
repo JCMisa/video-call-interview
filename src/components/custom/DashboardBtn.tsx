@@ -10,7 +10,7 @@ function DashboardBtn() {
   if (isCandidate || isGuest || isLoading) return null; // return null if user is a candidate/student
 
   return (
-    <Link href={"/dashboard"}>
+    <Link href={"/admin-dashboard"}>
       <Button className="gap-2 font-medium" size={"sm"}>
         <LayoutDashboardIcon className="size-4" />
         Dashboard

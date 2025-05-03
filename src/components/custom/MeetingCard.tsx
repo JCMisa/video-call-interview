@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import CommentDialog from "./CommentDialog";
 
 type Interview = Doc<"interviews">;
 
@@ -93,6 +94,13 @@ function MeetingCard({
                     ? "Passed"
                     : "Completed"}
           </Badge>
+
+          <div className="absolute bottom-0 right-4">
+            <CommentDialog
+              interviewId={interview._id}
+              isInterviewer={isInterviewer}
+            />
+          </div>
 
           {isInterviewer && (
             <AlertDialog>

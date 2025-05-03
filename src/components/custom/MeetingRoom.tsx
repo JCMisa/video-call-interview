@@ -32,8 +32,6 @@ import {
 } from "../ui/dropdown-menu";
 import EndCallButton from "./EndCallButton";
 import InterviewQuestions from "./InterviewQuestions";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { chatSession } from "@/utils/GeminiModel";
 import toast from "react-hot-toast";
 
@@ -179,7 +177,7 @@ const MeetingRoom = () => {
       // update the interview schema and add the studentAnswers by passing it to EndCall component
       setStudentAnswer(studAnswer);
 
-      // todo: pass the studentAnswers to gemini model and let it generate an evaluation
+      // pass the studentAnswers to gemini model and let it generate an evaluation
       const PROMPT = `
         interview questions:
 
@@ -196,20 +194,25 @@ What motivates you to participate in extracurricular activities?
 What are your family expectations for your academic
 performance?
 
-student answer: ${studAnswer}`;
+student answer: ${studAnswer}
+
+based on the interview questions and student answer, generate an object with properties such as feedback which is your feedback on student answer, rating which is a number rating from 1 to 10, and suggestions which is your possible suggestions if any for the improvement of the student answer in an HTML format, make it in a JSON format.
+`;
 
       const result = await chatSession.sendMessage(PROMPT);
 
+      // update the interview schema and add the ai feedback by passing it to EndCall component
       if (result) {
         const aiResult = result.response.text();
         const cleanedResult = JSON.parse(aiResult);
         setAiFeedback(cleanedResult);
+        toast.success("AI feedback generated successfully");
         console.log("ai feedback response: ", cleanedResult);
       } else {
         toast.error("Failed to generate AI feedback");
       }
 
-      // todo: update the interview schema and add the ai feedback by passing it to EndCall component
+      toast.success("Answer saved successfully");
     } catch (error) {
       console.log(`${error}: failed to save answer and feedback`);
       toast.error("failed to save answer and feedback");

@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import ModeToggle from "../ModeToggle";
 import Image from "next/image";
 import DashboardBtn from "./DashboardBtn";
 import { Button } from "../ui/button";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Navbar = () => {
+  const { isInterviewer } = useUserRole();
+
   return (
     <nav className="border-b">
       <div className="flex h-16 items-center px-4 container mx-auto">
@@ -32,7 +37,7 @@ const Navbar = () => {
         {/* RIGHT SIDE - ACTIONS */}
         <SignedIn>
           <div className="flex items-center space-x-4 ml-auto">
-            <DashboardBtn />
+            {isInterviewer && <DashboardBtn />}
             <ModeToggle />
             <UserButton />
           </div>

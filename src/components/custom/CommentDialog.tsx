@@ -28,7 +28,13 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 
-function CommentDialog({ interviewId }: { interviewId: Id<"interviews"> }) {
+function CommentDialog({
+  interviewId,
+  isInterviewer = true,
+}: {
+  interviewId: Id<"interviews">;
+  isInterviewer?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState("3");
@@ -75,7 +81,7 @@ function CommentDialog({ interviewId }: { interviewId: Id<"interviews"> }) {
       <DialogTrigger asChild>
         <Button variant="secondary" className="w-full">
           <MessageSquareIcon className="h-4 w-4 mr-2" />
-          Add Comment
+          {isInterviewer ? "Add Comment" : "View Comments"}
         </Button>
       </DialogTrigger>
 
@@ -143,23 +149,25 @@ function CommentDialog({ interviewId }: { interviewId: Id<"interviews"> }) {
 
           <div className="space-y-4">
             {/* RATING */}
-            <div className="space-y-2">
-              <Label>Rating</Label>
-              <Select value={rating} onValueChange={setRating}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <SelectItem key={value} value={value.toString()}>
-                      <div className="flex items-center gap-2">
-                        {renderStars(value)}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isInterviewer && (
+              <div className="space-y-2">
+                <Label>Rating</Label>
+                <Select value={rating} onValueChange={setRating}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <SelectItem key={value} value={value.toString()}>
+                        <div className="flex items-center gap-2">
+                          {renderStars(value)}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* COMMENT */}
             <div className="space-y-2">
