@@ -1,10 +1,13 @@
+import { redirect } from "next/navigation";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getAllInterviews = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) {
+      redirect("/sign-in");
+    }
 
     const interviews = await ctx.db.query("interviews").collect();
 
@@ -52,7 +55,7 @@ export const createInterview = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return null;
 
     return await ctx.db.insert("interviews", {
       ...args,
@@ -95,7 +98,7 @@ export const deleteInterview = mutation({
   args: { interviewId: v.id("interviews") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return null;
 
     const interview = await ctx.db.get(args.interviewId);
     if (!interview) throw new Error("Interview not found");

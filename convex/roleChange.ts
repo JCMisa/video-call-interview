@@ -12,7 +12,7 @@ export const addRoleChangeRequest = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return null;
 
     return await ctx.db.insert("roleChange", {
       requestedBy: args.requestedBy,
@@ -29,7 +29,7 @@ export const addRoleChangeRequest = mutation({
 export const getAllRequests = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return [];
 
     const requests = await ctx.db.query("roleChange").collect();
 

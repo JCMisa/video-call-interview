@@ -328,7 +328,7 @@ function InterviewScheduleUI() {
                     onSelect={(date) =>
                       date && setFormData({ ...formData, date })
                     }
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => date <= new Date()}
                     className="rounded-md border"
                   />
                 </div>
@@ -341,15 +341,15 @@ function InterviewScheduleUI() {
                   <Input
                     type="time"
                     min="07:00"
-                    max="22:00"
+                    max="24:00"
                     value={formData.time}
                     onChange={(e) => {
                       const time = e.target.value;
-                      if (time >= "07:00" && time <= "22:00") {
+                      if (time >= "07:00" && time <= "24:00") {
                         setFormData({ ...formData, time });
                       } else {
                         toast.error(
-                          "Please select a time between 7:00 AM and 10:00 PM"
+                          "Please select a time between 7:00 AM and 12:00 AM"
                         );
                       }
                     }}

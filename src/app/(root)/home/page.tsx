@@ -9,9 +9,10 @@ import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import MeetingModal from "@/components/custom/MeetingModal";
 import LoaderUI from "@/components/custom/LoaderUI";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, MoreHorizontalIcon } from "lucide-react";
 import MeetingCard from "@/components/custom/MeetingCard";
 import BeCandidateButton from "@/components/custom/BeCandidateButton";
+import { GuestBentoGrid } from "@/components/custom/GuestBentoGrid";
 
 export default function Home() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function Home() {
   return (
     <div className="container max-w-7xl mx-auto p-6">
       {/* welcome section */}
-      <div className="rounded-lg bg-card p-6 border shadow-sm mb-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="rounded-lg bg-card p-6 border shadow-sm mb-10 flex flex-col md:flex-row items-center justify-between gap-6 relative">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
             Welcome back!
@@ -75,18 +76,20 @@ export default function Home() {
           </p>
         </div>
 
-        <BeCandidateButton
-          user={userData as UserType}
-          defaultRole={
-            isAdmin
-              ? "admin"
-              : isTeacher
-                ? "teacher"
-                : isCandidate
-                  ? "student"
-                  : "guest"
-          }
-        />
+        {userData?.role !== "admin" && (
+          <BeCandidateButton
+            user={userData as UserType}
+            defaultRole={
+              isAdmin
+                ? "admin"
+                : isTeacher
+                  ? "teacher"
+                  : isCandidate
+                    ? "student"
+                    : "guest"
+            }
+          />
+        )}
       </div>
 
       {(isInterviewer || isCandidate) && (
@@ -139,6 +142,10 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <div className="my-2">
+        <GuestBentoGrid />
+      </div>
     </div>
   );
 }

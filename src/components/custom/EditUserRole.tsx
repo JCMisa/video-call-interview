@@ -134,9 +134,8 @@ const EditUserRole = ({
                 <SelectValue placeholder="Select a Role" />
               </SelectTrigger>
               <SelectContent className="w-full">
-                <SelectItem value="admin">Administrator</SelectItem>
-                <SelectItem value="teacher">Interviewer</SelectItem>
-                <SelectItem value="student">Candidate</SelectItem>
+                <SelectItem value="teacher">Teacher</SelectItem>
+                <SelectItem value="student">Student</SelectItem>
                 <SelectItem value="guest">Guest</SelectItem>
               </SelectContent>
             </Select>

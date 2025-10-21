@@ -71,25 +71,26 @@ const BeCandidateButton = ({
     }
   };
 
-  if (userRequests?.length >= 3) {
+  if (userRequests?.length >= 1) {
     return (
-      <Button variant={"destructive"} disabled>
-        Out of Request
-      </Button>
+      // <Button variant={"destructive"} disabled>
+      //   Out of Request
+      // </Button>
+      null
     );
   } else {
     return (
       <div className="flex flex-col gap-2">
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button variant={"outline"}>Be a Candidate</Button>
+            <Button variant={"outline"}>Request Role Change</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Request a Role Change</DialogTitle>
               <DialogDescription>
-                Request to be a candidate or a LCEST interviewer. Your request
-                will be validated by the Administrator.
+                Request to be a student or LCEST teacher. Your request will be
+                validated by the Administrator.
               </DialogDescription>
             </DialogHeader>
 
@@ -108,9 +109,8 @@ const BeCandidateButton = ({
                     <SelectValue placeholder="Select a Role" />
                   </SelectTrigger>
                   <SelectContent className="w-full">
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="teacher">Interviewer</SelectItem>
-                    <SelectItem value="student">Candidate</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="guest">Guest</SelectItem>
                   </SelectContent>
                 </Select>
@@ -166,15 +166,15 @@ const BeCandidateButton = ({
             </div>
           </DialogContent>
         </Dialog>
-        {userRequests?.length > 0 && (
+        {/* {userRequests?.length > 0 && (
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            You only have {3 - userRequests?.length} role change requests left.{" "}
+            You only have {5 - userRequests?.length} role change requests left.{" "}
             <ViewRequests
               userRequests={userRequests as UserRequestType[]}
               currentUserRole={user?.role}
             />
           </div>
-        )}
+        )} */}
       </div>
     );
   }

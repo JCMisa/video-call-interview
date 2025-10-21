@@ -10,7 +10,7 @@ export const addComment = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return null;
 
     return await ctx.db.insert("comments", {
       interviewId: args.interviewId,

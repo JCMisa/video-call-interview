@@ -1,6 +1,6 @@
-import type { Config } from "tailwindcss";
+// import type { Config } from "tailwindcss";
 
-const config: Config = {
+const config = {
   darkMode: ["class"],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -21,30 +21,31 @@ const config: Config = {
           foreground: "hsl(var(--popover-foreground))",
         },
         light: {
-          "100": "#F0F0F0",
-          "200": "#E0E0E0",
-          "300": "#D1D1D1",
-          "400": "#C2C2C2",
+          100: "#F0F0F0",
+          200: "#E0E0E0",
+          300: "#D1D1D1",
+          400: "#C2C2C2",
           DEFAULT: "#FFFFFF",
           foreground: "hsl(var(--secondary-foreground))",
         },
         dark: {
-          "100": "#1A1A1A",
-          "200": "#333333",
-          "300": "#4D4D4D",
-          "400": "#666666",
-          "500": "#000000",
+          100: "#1A1A1A",
+          200: "#333333",
+          300: "#4D4D4D",
+          400: "#666666",
+          500: "#000000",
           DEFAULT: "#0A0A0A",
           foreground: "hsl(var(--secondary-foreground))",
         },
         primary: {
-          "100": "#E8F3D5",
-          "200": "#C5E59B",
-          "300": "#A2D661",
-          "400": "#7AC142",
-          "500": "#599C31",
-          "600": "#397720",
-          DEFAULT: "#7AC142",
+          100: "#E0F7FF",
+          200: "#B3E5FC",
+          300: "#81D4FA",
+          400: "#4FC3F7",
+          500: "#03A9F4",
+          600: "#0288D1",
+          700: "#01579B",
+          DEFAULT: "#03A9F4",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -67,11 +68,11 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
         },
       },
       borderRadius: {
@@ -83,4 +84,5 @@ const config: Config = {
   },
   plugins: [require("tailwindcss-animate")],
 };
-export default config;
+
+module.exports = config;

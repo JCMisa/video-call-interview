@@ -295,9 +295,9 @@ based on the interview questions and student answer, generate an object with pro
           minSize={25}
           className="flex flex-col items-start gap-10 p-4 w-full"
         >
-          <InterviewQuestions />
-          <div className="w-full">
-            <div className="mb-4 max-h-60 overflow-y-auto card-scroll rounded border p-2">
+          <div className="flex flex-col md:flex-row gap-2 items-center md:items-start w-full overflow-y-auto">
+            <InterviewQuestions />
+            <div className="mb-4 max-h-60 overflow-y-auto card-scroll rounded border p-2 w-full">
               {transcripts.length === 0 ? (
                 <p className="text-gray-500">No transcripts yet...</p>
               ) : (
@@ -308,6 +308,8 @@ based on the interview questions and student answer, generate an object with pro
                 ))
               )}
             </div>
+          </div>
+          <div className="w-full">
             <div className="flex items-center justify-between gap-4">
               <Button
                 variant="outline"

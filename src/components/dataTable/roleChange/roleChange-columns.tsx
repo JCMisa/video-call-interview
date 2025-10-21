@@ -48,6 +48,21 @@ export const columns: (
       );
     },
   },
+  // {
+  //   accessorKey: "requestorEmail",
+  //   header: ({ column }) => {
+  //     return (
+  //       <Button
+  //         variant="ghost"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //         className="hover:bg-transparent hover:text-white"
+  //       >
+  //         Email
+  //         <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+  //       </Button>
+  //     );
+  //   },
+  // },
   {
     accessorKey: "requestorName",
     header: ({ column }) => {
@@ -133,7 +148,7 @@ export const columns: (
       const proofUrl = row.getValue("requestProof") as string;
 
       return (
-        <Link href={proofUrl} target="_blank">
+        <Link href={proofUrl ? proofUrl : "#"} target="_blank">
           <Badge className="bg-primary hover:bg-primary-500 transition-all">
             Click to View
           </Badge>

@@ -70,7 +70,7 @@ export function DataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize: 5, // Set to show 3 records per page
+        pageSize: 3, // Set to show 3 records per page
       },
     },
   });
