@@ -143,7 +143,10 @@ export default function Home() {
         </div>
       )}
 
-      <div className="my-2">
+      <div className="my-5  flex flex-col gap-[10px]">
+        <div className="font-bold tracking-wider text-4xl text-center">
+          Features of the System
+        </div>
         <GuestBentoGrid />
       </div>
     </div>
