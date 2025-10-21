@@ -13,6 +13,7 @@ import { Loader2Icon, MoreHorizontalIcon } from "lucide-react";
 import MeetingCard from "@/components/custom/MeetingCard";
 import BeCandidateButton from "@/components/custom/BeCandidateButton";
 import { GuestBentoGrid } from "@/components/custom/GuestBentoGrid";
+import FeaturesPage from "@/components/custom/HomeFeaturesPage";
 
 export default function Home() {
   const router = useRouter();
@@ -143,11 +144,8 @@ export default function Home() {
         </div>
       )}
 
-      <div className="my-5  flex flex-col gap-[10px]">
-        <div className="font-bold tracking-wider text-4xl text-center">
-          Features of the System
-        </div>
-        <GuestBentoGrid />
+      <div className="my-5">
+        <FeaturesPage />
       </div>
     </div>
   );
