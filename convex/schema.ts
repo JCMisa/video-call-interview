@@ -56,4 +56,12 @@ export default defineSchema({
       v.literal("rejected")
     ),
   }).index("by_requested_by", ["requestedBy"]),
+
+  track: defineTable({
+    userId: v.id("users"),
+    userEmail: v.string(),
+    value: v.union(v.literal("TVL"), v.literal("Academic")),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_user_email", ["userEmail"]),
 });

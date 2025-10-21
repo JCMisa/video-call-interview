@@ -9,7 +9,13 @@ import { Button } from "../ui/button";
 import { CameraIcon, MicIcon, SettingsIcon } from "lucide-react";
 import { Switch } from "../ui/switch";
 
-const MeetingSetup = ({ onSetupComplete }: { onSetupComplete: () => void }) => {
+const MeetingSetup = ({
+  onSetupComplete,
+  userRole,
+}: {
+  onSetupComplete: (role?: string) => void;
+  userRole?: string;
+}) => {
   const [isCameraDisabled, setIsCameraDisabled] = useState(true);
   const [isMicDisabled, setIsMicDisabled] = useState(false);
 
@@ -28,7 +34,7 @@ const MeetingSetup = ({ onSetupComplete }: { onSetupComplete: () => void }) => {
 
   const handleJoin = async () => {
     await call.join();
-    onSetupComplete();
+    onSetupComplete(userRole);
   };
 
   return (

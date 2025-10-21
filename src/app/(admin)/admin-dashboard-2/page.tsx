@@ -46,6 +46,11 @@ import RoleChangeDataCard from "./_components/RoleChangeDataCard";
 import InterviewDataChart from "./_components/InterviewDataChart";
 import { DataTable } from "@/components/dataTable/roleChange/roleChange-data-table";
 import { columns } from "@/components/dataTable/roleChange/roleChange-columns";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 type Interview = Doc<"interviews">;
 
@@ -104,9 +109,12 @@ const AdminDashboard2 = () => {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col lg:flex-row gap-5 py-5">
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="h-full min-h-0 flex flex-col lg:flex-row gap-5 py-5"
+    >
       {/* left side */}
-      <div className="w-full lg:w-[30%] h-full min-h-0 flex flex-col gap-5">
+      <ResizablePanel className="w-full lg:w-[30%] h-full min-h-0 flex flex-col gap-5">
         {/* start new interview button */}
         <div className="flex items-center justify-center w-full">
           <Link href="/schedule" className="w-full">
@@ -244,9 +252,11 @@ const AdminDashboard2 = () => {
               )
           )}
         </div>
-      </div>
+      </ResizablePanel>
+      <ResizableHandle />
+
       {/* right side */}
-      <div className="w-full lg:w-[70%] h-full min-h-0 flex flex-col gap-10">
+      <ResizablePanel className="w-full lg:w-[70%] h-full min-h-0 flex flex-col gap-10">
         {/* data cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <UserDataCard
@@ -285,8 +295,8 @@ const AdminDashboard2 = () => {
             />
           </div>
         )}
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 };
 
