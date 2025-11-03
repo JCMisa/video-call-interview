@@ -71,7 +71,7 @@ const BeCandidateButton = ({
     }
   };
 
-  if (userRequests?.length >= 1) {
+  if (userRequests?.length >= 1 && user.role !== "teacher") {
     return (
       // <Button variant={"destructive"} disabled>
       //   Out of Request
@@ -109,9 +109,16 @@ const BeCandidateButton = ({
                     <SelectValue placeholder="Select a Role" />
                   </SelectTrigger>
                   <SelectContent className="w-full">
+                    {user.role !== "student" && (
+                      <SelectItem value="admin">Admin</SelectItem>
+                    )}
                     <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="guest">Guest</SelectItem>
+                    {user.role !== "teacher" && (
+                      <SelectItem value="student">Student</SelectItem>
+                    )}
+                    {user.role !== "teacher" && (
+                      <SelectItem value="guest">Guest</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
