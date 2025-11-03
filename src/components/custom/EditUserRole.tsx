@@ -21,6 +21,7 @@ import { Label } from "../ui/label";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 const EditUserRole = ({
   userClerkId,
@@ -29,8 +30,12 @@ const EditUserRole = ({
   userClerkId: string;
   requestId: string;
 }) => {
+  const { isLoaded, isSignedIn } = useUser();
+
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  if (!isLoaded || !isSignedIn) return null;
 
   const roleChangeRequest = useQuery(api.roleChange.getRequestById, {
     requestId: requestId || "",

@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import ViewRequests from "./ViewRequests";
+import { useUser } from "@clerk/nextjs";
 
 const BeCandidateButton = ({
   user,
@@ -33,12 +34,15 @@ const BeCandidateButton = ({
   user: UserType;
   defaultRole: string;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isLoaded, isSignedIn } = useUser();
 
+  const [isOpen, setIsOpen] = useState(false);
   const [requestedRole, setRequestedRole] = useState(defaultRole);
   const [requestedRoleReason, setRequestedRoleReason] = useState("");
   const [proof, setProof] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  if (!isLoaded || !isSignedIn) return null;
 
   const addRequest = useMutation(api.roleChange.addRoleChangeRequest);
   const userRequests =
