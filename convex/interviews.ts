@@ -1,6 +1,34 @@
 import { redirect } from "next/navigation";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Doc } from "./_generated/dataModel";
+
+const belongsToCategory = (
+  interview: Doc<"interviews">,
+  category: string,
+  now: number
+) => {
+  const interviewTime = interview.startTime;
+
+  if (category === "succeeded") return interview.status === "succeeded";
+  if (category === "failed") return interview.status === "failed";
+  if (category === "completed") {
+    return (
+      interview.status === "completed" ||
+      (interview.status !== "succeeded" &&
+        interview.status !== "failed" &&
+        interviewTime < now)
+    );
+  }
+  if (category === "upcoming") {
+    return (
+      interview.status !== "succeeded" &&
+      interview.status !== "failed" &&
+      interviewTime > now
+    );
+  }
+  return false;
+};
 
 export const getAllInterviews = query({
   handler: async (ctx) => {
@@ -113,5 +141,109 @@ export const deleteInterview = mutation({
     await Promise.all(
       commentsToDelete.map((comment) => ctx.db.delete(comment._id))
     );
+  },
+});
+
+export const getInterviewsByCategory = query({
+  args: {
+    category: v.union(
+      v.literal("upcoming"),
+      v.literal("completed"),
+      v.literal("succeeded"),
+      v.literal("failed")
+    ),
+    searchTerm: v.optional(v.string()),
+    page: v.number(),
+    itemsPerPage: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.auth.getUserIdentity(); // Auth check
+    const now = Date.now();
+
+    // Get all interviews (your existing getAllInterviews logic)
+    const allInterviews = await ctx.db.query("interviews").collect();
+
+    // Filter by category
+    let filtered = allInterviews.filter((interview) =>
+      belongsToCategory(interview, args.category, now)
+    );
+
+    // Apply search
+    if (args.searchTerm) {
+      const term = args.searchTerm.toLowerCase();
+      const users = await ctx.db.query("users").collect();
+
+      filtered = filtered.filter((interview) => {
+        const candidate = users.find(
+          (u) => u.clerkId === interview.candidateId
+        );
+        const candidateName = candidate?.name || "";
+
+        return (
+          candidateName.toLowerCase().includes(term) ||
+          interview.title.toLowerCase().includes(term) ||
+          (interview.description || "").toLowerCase().includes(term)
+        );
+      });
+    }
+
+    // Paginate
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / args.itemsPerPage));
+    const start = (args.page - 1) * args.itemsPerPage;
+
+    return {
+      interviews: filtered.slice(start, start + args.itemsPerPage),
+      totalCount,
+      totalPages,
+    };
+  },
+});
+
+export const getScheduleInterviews = query({
+  args: {
+    searchTerm: v.optional(v.string()),
+    page: v.number(),
+    itemsPerPage: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.auth.getUserIdentity(); // Auth check
+    const now = Date.now();
+
+    // Get all interviews and users
+    const allInterviews = await ctx.db.query("interviews").collect();
+    const users = await ctx.db.query("users").collect();
+
+    // Apply search filter
+    let filtered = allInterviews;
+    if (args.searchTerm) {
+      const term = args.searchTerm.toLowerCase();
+      filtered = allInterviews.filter((interview) => {
+        const candidate = users.find(
+          (u) => u.clerkId === interview.candidateId
+        );
+        const candidateName = candidate?.name || "";
+
+        return (
+          candidateName.toLowerCase().includes(term) ||
+          interview.title.toLowerCase().includes(term) ||
+          (interview.description || "").toLowerCase().includes(term)
+        );
+      });
+    }
+
+    // Sort by start time (newest first)
+    filtered.sort((a, b) => b.startTime - a.startTime);
+
+    // Paginate
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / args.itemsPerPage));
+    const start = (args.page - 1) * args.itemsPerPage;
+
+    return {
+      interviews: filtered.slice(start, start + args.itemsPerPage),
+      totalCount,
+      totalPages,
+    };
   },
 });

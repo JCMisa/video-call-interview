@@ -1,12 +1,24 @@
-import { useUser } from "@clerk/nextjs";
-import {
-  CallRecording,
-  useStreamVideoClient,
-} from "@stream-io/video-react-sdk";
-import { useMutation, useQuery } from "convex/react";
-import { useEffect, useState } from "react";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import toast from "react-hot-toast";
+import { Doc, Id } from "../../../../convex/_generated/dataModel";
+import { useUser } from "@clerk/nextjs";
+import { useStreamVideoClient } from "@stream-io/video-react-sdk";
+import { toast } from "react-hot-toast";
+import { format } from "date-fns";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Loader2Icon,
+  VideoIcon,
+  ClipboardIcon,
+  XIcon,
+} from "lucide-react";
+
+// Keep all your existing imports...
 import {
   Dialog,
   DialogHeader,
@@ -25,15 +37,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import UserInfo from "@/components/custom/UserInfo";
-import { ClipboardIcon, Loader2Icon, VideoIcon, XIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-// import { TIME_SLOTS } from "@/constants";
 import MeetingCard from "@/components/custom/MeetingCard";
 import { useUserRole } from "@/hooks/useUserRole";
 import useGetCalls from "@/hooks/useGetCalls";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RecordingCard from "@/components/custom/RecordingCard";
-import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
 
 interface RecordingWithCallInfo {
   url: string;
@@ -42,23 +51,120 @@ interface RecordingWithCallInfo {
   filename: string;
 }
 
-function InterviewScheduleUI() {
+type Interview = Doc<"interviews">;
+
+// ✅ SUB-COMPONENT (no hooks)
+const InterviewWithRecordings = ({
+  interview,
+  recordings,
+  isInterviewer,
+  users,
+}: {
+  interview: Interview;
+  recordings: RecordingWithCallInfo[];
+  isInterviewer: boolean;
+  users: any[];
+}) => {
+  // Get candidate info
+  const candidate = users.find((u) => u.clerkId === interview.candidateId);
+  const candidateName = candidate?.name || "Unknown Candidate";
+
+  const interviewRecordings = recordings
+    .filter((rec) => rec.filename.includes(interview.streamCallId))
+    .sort(
+      (a, b) =>
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    );
+
+  return (
+    <div className="grid grid-cols-5 gap-2 items-start">
+      <div className="col-span-3">
+        <MeetingCard interview={interview} isInterviewer={isInterviewer} />
+      </div>
+
+      <div className="col-span-2 flex flex-col gap-1">
+        {interviewRecordings.length > 0 ? (
+          interviewRecordings.map((recording, index) => (
+            <div
+              key={recording.filename || index}
+              className="p-3 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-md">
+                  <VideoIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium truncate">
+                      Recording {index + 1}
+                    </p>
+                    <time className="text-xs text-muted-foreground">
+                      {format(new Date(recording.start_time), "MMM d, hh:mm a")}
+                    </time>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <a
+                      href={recording.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline truncate"
+                    >
+                      Watch Recording
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(recording.url);
+                        toast.success("Recording URL copied!");
+                      }}
+                    >
+                      <ClipboardIcon className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground italic px-1">
+            No recordings available yet
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function InterviewScheduleUI() {
   const client = useStreamVideoClient();
   const { user } = useUser();
+  const { isInterviewer } = useUserRole();
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const interviews = useQuery(api.interviews.getAllInterviews) ?? [];
+  // ✅ PAGINATION & SEARCH STATE
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // ✅ EXACTLY 2 QUERIES - ALWAYS SAME ORDER
+  const scheduleData = useQuery(api.interviews.getScheduleInterviews, {
+    searchTerm: searchTerm || undefined,
+    page,
+    itemsPerPage,
+  });
   const users = useQuery(api.users.getUsers) ?? [];
   const createInterview = useMutation(api.interviews.createInterview);
 
-  const candidates = users?.filter((u) => u.role === "student");
-  const interviewers = users?.filter(
+  // Candidates and interviewers
+  const candidates = users.filter((u) => u.role === "student");
+  const interviewers = users.filter(
     (u) => u.role === "teacher" || u.role === "admin"
   );
 
-  const { isInterviewer, isLoading } = useUserRole();
-
+  // Form state (keep existing)
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -68,6 +174,34 @@ function InterviewScheduleUI() {
     interviewerIds: user?.id ? [user.id] : [],
   });
 
+  // Recordings state
+  const { calls } = useGetCalls({ isAdminView: true });
+  const [recordings, setRecordings] = useState<RecordingWithCallInfo[]>([]);
+
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      if (!calls) return;
+      try {
+        const recordingsData = await Promise.all(
+          calls.map(async (call) => {
+            const response = await call.queryRecordings();
+            return response.recordings.map((recording) => ({
+              url: recording.url,
+              start_time: recording.start_time,
+              end_time: recording.end_time,
+              filename: recording.filename,
+            }));
+          })
+        );
+        setRecordings(recordingsData.flat().filter((r) => r.url));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchRecordings();
+  }, [calls]);
+
+  // Handlers (keep existing)
   const scheduleMeeting = async () => {
     if (!client || !user) return;
     if (!formData.candidateId || formData.interviewerIds.length === 0) {
@@ -76,12 +210,9 @@ function InterviewScheduleUI() {
     }
 
     setIsCreating(true);
-
     try {
-      const { title, description, date, time, candidateId, interviewerIds } =
-        formData;
-      const [hours, minutes] = time.split(":");
-      const meetingDate = new Date(date);
+      const [hours, minutes] = formData.time.split(":");
+      const meetingDate = new Date(formData.date);
       meetingDate.setHours(parseInt(hours), parseInt(minutes), 0);
 
       const id = crypto.randomUUID();
@@ -91,25 +222,24 @@ function InterviewScheduleUI() {
         data: {
           starts_at: meetingDate.toISOString(),
           custom: {
-            description: title,
-            additionalDetails: description,
+            description: formData.title,
+            additionalDetails: formData.description,
           },
         },
       });
 
       await createInterview({
-        title,
-        description,
+        title: formData.title,
+        description: formData.description,
         startTime: meetingDate.getTime(),
         status: "upcoming",
         streamCallId: id,
-        candidateId,
-        interviewerIds,
+        candidateId: formData.candidateId,
+        interviewerIds: formData.interviewerIds,
       });
 
       setOpen(false);
       toast.success("Meeting scheduled successfully!");
-
       setFormData({
         title: "",
         description: "",
@@ -120,7 +250,7 @@ function InterviewScheduleUI() {
       });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to schedule meeting. Please try again.");
+      toast.error("Failed to schedule meeting.");
     } finally {
       setIsCreating(false);
     }
@@ -146,68 +276,28 @@ function InterviewScheduleUI() {
   const selectedInterviewers = interviewers.filter((i) =>
     formData.interviewerIds.includes(i.clerkId)
   );
-
   const availableInterviewers = interviewers.filter(
     (i) => !formData.interviewerIds.includes(i.clerkId)
   );
 
-  // get interview recordings -- start
-  const { calls } = useGetCalls({ isAdminView: true });
-  const [recordings, setRecordings] = useState<RecordingWithCallInfo[]>([]);
-  useEffect(() => {
-    const fetchRecordings = async () => {
-      console.log("Fetching recordings started");
-      console.log("Calls available:", calls); // Debug log for calls
+  // Search handler
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value);
+    setPage(1); // Reset to page 1
+  }, []);
 
-      if (!calls) {
-        console.log("No calls available");
-        return;
-      }
-
-      try {
-        console.log("Number of calls to process:", calls.length);
-
-        const recordingsData = await Promise.all(
-          calls.map(async (call) => {
-            console.log("Processing call:", call.cid); // Log each call being processed
-            const response = await call.queryRecordings();
-            console.log("Recordings for call:", call.cid, response.recordings);
-
-            return response.recordings.map((recording) => ({
-              url: recording.url,
-              start_time: recording.start_time,
-              end_time: recording.end_time,
-              filename: recording.filename,
-            }));
-          })
-        );
-
-        const allRecordings = recordingsData
-          .flat()
-          .filter((recording) => recording.url);
-
-        console.log("Filtered recordings:", allRecordings);
-        setRecordings(allRecordings);
-      } catch (error) {
-        console.error("Error in fetchRecordings:", error);
-      }
-    };
-
-    // Add a check to see if calls have changed
-    console.log("useEffect triggered, calls:", calls);
-    fetchRecordings();
-  }, [calls]);
-
-  // Add a debug log when recordings state changes
-  useEffect(() => {
-    console.log("Recordings state updated:", recordings);
-  }, [recordings]);
-  // get interview recordings -- end
+  if (!scheduleData) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-8">
+      {/* Header with search */}
       <div className="flex items-center justify-between">
-        {/* HEADER INFO */}
         <div>
           <h1 className="text-3xl font-bold">Interviews</h1>
           <p className="text-muted-foreground mt-1">
@@ -215,281 +305,212 @@ function InterviewScheduleUI() {
           </p>
         </div>
 
-        {/* DIALOG */}
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search interviews..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg">Schedule Interview</Button>
-          </DialogTrigger>
-
-          <DialogContent className="sm:max-w-[500px] h-[calc(100vh-200px)] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Schedule Interview</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {/* INTERVIEW TITLE */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title</label>
-                <Input
-                  placeholder="Interview title"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* INTERVIEW DESC */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  placeholder="Interview description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  rows={3}
-                />
-              </div>
-
-              {/* CANDIDATE */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Candidate</label>
-                <Select
-                  value={formData.candidateId}
-                  onValueChange={(candidateId) =>
-                    setFormData({ ...formData, candidateId })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select candidate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {candidates.map((candidate) => (
-                      <SelectItem
-                        key={candidate.clerkId}
-                        value={candidate.clerkId}
-                      >
-                        <UserInfo user={candidate} />
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* INTERVIEWERS */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Interviewers</label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedInterviewers.map((interviewer) => (
-                    <div
-                      key={interviewer.clerkId}
-                      className="inline-flex items-center gap-2 bg-secondary px-2 py-1 rounded-md text-sm"
-                    >
-                      <UserInfo user={interviewer} />
-                      {interviewer.clerkId !== user?.id && (
-                        <button
-                          onClick={() => removeInterviewer(interviewer.clerkId)}
-                          className="hover:text-destructive transition-colors"
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg">Schedule Interview</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] h-[calc(100vh-200px)] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>Schedule Interview</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {/* All existing form fields... */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    placeholder="Interview title"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                  />
                 </div>
-                {availableInterviewers.length > 0 && (
-                  <Select onValueChange={addInterviewer}>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    placeholder="Interview description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Candidate</label>
+                  <Select
+                    value={formData.candidateId}
+                    onValueChange={(candidateId) =>
+                      setFormData({ ...formData, candidateId })
+                    }
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Add interviewer" />
+                      <SelectValue placeholder="Select candidate" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInterviewers.map((interviewer) => (
+                      {candidates.map((candidate) => (
                         <SelectItem
-                          key={interviewer.clerkId}
-                          value={interviewer.clerkId}
+                          key={candidate.clerkId}
+                          value={candidate.clerkId}
                         >
-                          <UserInfo user={interviewer} />
+                          <UserInfo user={candidate} />
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
-              </div>
-
-              {/* DATE & TIME */}
-              <div className="flex gap-4">
-                {/* CALENDAR */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date</label>
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) =>
-                      date && setFormData({ ...formData, date })
-                    }
-                    disabled={(date) => date <= new Date()}
-                    className="rounded-md border"
-                  />
                 </div>
-
-                {/* TIME */}
-
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Time</label>
-                  {/* // change the time slot based on the school time */}
-                  <Input
-                    type="time"
-                    min="07:00"
-                    max="24:00"
-                    value={formData.time}
-                    onChange={(e) => {
-                      const time = e.target.value;
-                      if (time >= "07:00" && time <= "24:00") {
-                        setFormData({ ...formData, time });
-                      } else {
-                        toast.error(
-                          "Please select a time between 7:00 AM and 12:00 AM"
-                        );
-                      }
-                    }}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={scheduleMeeting} disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Loader2Icon className="mr-2 size-4 animate-spin" />
-                      Scheduling...
-                    </>
-                  ) : (
-                    "Schedule Interview"
+                  <label className="text-sm font-medium">Interviewers</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedInterviewers.map((interviewer) => (
+                      <div
+                        key={interviewer.clerkId}
+                        className="inline-flex items-center gap-2 bg-secondary px-2 py-1 rounded-md text-sm"
+                      >
+                        <UserInfo user={interviewer} />
+                        {interviewer.clerkId !== user?.id && (
+                          <button
+                            onClick={() =>
+                              removeInterviewer(interviewer.clerkId)
+                            }
+                            className="hover:text-destructive"
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {availableInterviewers.length > 0 && (
+                    <Select onValueChange={addInterviewer}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Add interviewer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableInterviewers.map((interviewer) => (
+                          <SelectItem
+                            key={interviewer.clerkId}
+                            value={interviewer.clerkId}
+                          >
+                            <UserInfo user={interviewer} />
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
+                </div>
+                <div className="flex gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Date</label>
+                    <Calendar
+                      mode="single"
+                      selected={formData.date}
+                      onSelect={(date) =>
+                        date && setFormData({ ...formData, date })
+                      }
+                      disabled={(date) => date <= new Date()}
+                      className="rounded-md border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Time</label>
+                    <Input
+                      type="time"
+                      min="07:00"
+                      max="24:00"
+                      value={formData.time}
+                      onChange={(e) => {
+                        const time = e.target.value;
+                        if (time >= "07:00" && time <= "24:00") {
+                          setFormData({ ...formData, time });
+                        } else {
+                          toast.error(
+                            "Please select a time between 7:00 AM and 12:00 AM"
+                          );
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="outline" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={scheduleMeeting} disabled={isCreating}>
+                    {isCreating ? (
+                      <>
+                        <Loader2Icon className="mr-2 size-4 animate-spin" />
+                        Scheduling...
+                      </>
+                    ) : (
+                      "Schedule Interview"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Interviews list or empty state */}
+      {scheduleData.interviews.length > 0 ? (
+        <>
+          <div className="grid gap-6">
+            {scheduleData.interviews.map((interview) => (
+              <InterviewWithRecordings
+                key={interview._id}
+                interview={interview}
+                recordings={recordings}
+                isInterviewer={isInterviewer}
+                users={users}
+              />
+            ))}
+          </div>
+
+          {/* Pagination controls */}
+          {scheduleData.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {page} of {scheduleData.totalPages}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" /> Prev
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= scheduleData.totalPages}
+                >
+                  Next <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* LOADING STATE & MEETING CARDS */}
-      {!interviews ? (
-        <div className="flex justify-center py-12">
-          <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : interviews.length > 0 ? (
-        <div className="spacey-4">
-          <div className="grid gap-6">
-            {interviews.map((interview) => (
-              <div
-                key={interview._id}
-                className="grid grid-cols-5 gap-2 items-start"
-              >
-                <div className="col-span-3">
-                  <MeetingCard
-                    interview={interview}
-                    isInterviewer={isInterviewer}
-                  />
-                </div>
-
-                <div className="col-span-2 flex flex-col gap-1">
-                  {recordings
-                    .filter((rec) =>
-                      rec.filename.includes(interview.streamCallId)
-                    )
-                    .sort(
-                      (a, b) =>
-                        new Date(a.start_time).getTime() -
-                        new Date(b.start_time).getTime()
-                    ) // Sort ascending
-                    .map((recording, index) => (
-                      <div
-                        key={recording.filename || index}
-                        className="p-3 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-md">
-                            <VideoIcon className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate">
-                                Recording {index + 1}
-                              </p>
-                              <time className="text-xs text-muted-foreground">
-                                {format(
-                                  new Date(recording.start_time),
-                                  "MMM d, hh:mm a"
-                                )}
-                              </time>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <a
-                                href={recording.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-primary hover:underline truncate"
-                              >
-                                Watch Recording
-                              </a>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(recording.url);
-                                  toast.success("Recording URL copied!");
-                                }}
-                              >
-                                <ClipboardIcon className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-                {!recordings.some((rec) =>
-                  rec.filename.includes(interview.streamCallId)
-                ) && (
-                  <p className="text-sm text-muted-foreground italic px-1">
-                    No recordings available yet
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
-          No interviews scheduled
+          No interviews found
         </div>
       )}
-
-      {/* RECORDINGS
-      <ScrollArea className="h-[calc(100vh-12rem)] mt-3">
-        {recordings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
-            {recordings.map((r) => (
-              <RecordingCard key={r.end_time} recording={r} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-[400px] gap-4">
-            <p className="text-xl font-medium text-muted-foreground">
-              No recordings available
-            </p>
-          </div>
-        )}
-      </ScrollArea> */}
     </div>
   );
 }
-export default InterviewScheduleUI;
